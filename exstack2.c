@@ -45,11 +45,12 @@ element peek(StackType* s) { // 탑에 있는 값 확인
 }
 int prec(char op) {
 	switch (op) {
-	case'&': case'|': return 0;
-	case'>': case'<': case'=': return 1;
-	case'+': case'-': return 2;
-	case'*': case'/': return 3;
-	case'^': return 4;
+	case'(': return 0;
+	case'&': case'|': return 1;
+	case'>': case'<': case'=': return 2;
+	case'+': case'-': return 3;
+	case'*': case'/': return 4;
+	case'^': return 5;
 	}
 	return -1;
 }
@@ -57,27 +58,32 @@ void postfix(char *str) {
 	char ch, top_op;
 	int len = strlen(str);
 
-	char* res = malloc(sizeof(char) * (len + 1));
-	res[len] = '\0';
-
 	StackType s;
 	init_stack(&s);
 
-	int rindex = 0, sindex = 0;
-
-	while (rindex < len && sindex < len) {
-		if (prec(str[sindex]) == -1) res[rindex++] = str[sindex++];
+	for (int i = 0; i < len; i++) {
+		ch = str[i];
+		if (prec(ch) == -1) printf("%c", ch);
 		else {
-			if (is_empty(&s)) push(&s, str[sindex++]);
-			else if (prec(peek(&s)) < prec(str[sindex])) push(&s, str[sindex++]);
-			else {
-				res[rindex++] = pop(&s);
+			if (is_empty(&s)) push(&s, ch); //스택이 비어있다면 그냥 푸시
+
+			else if (prec(peek(&s)) < prec(ch)) push(&s, ch); // 연산자 순위가 높으면 푸시
+
+			else { // 연산자 순위가 같거나 작으면
+				printf("%c", pop(&s));
+
+				while (!is_empty(&s)) { // 스택에 쌓인 다른 연산자와 현재 연산자와 순위를 비교
+					if (prec(peek(&s)) >= prec(ch)) printf("%c", pop(&s)); // 스택에 있는 연산자의 순위가 높으면 팝
+					else break; // 아니면 탈출
+				}
+
+				push(&s, ch); // 현재 연산자를 푸시
 			}
 		}
 	}
-	for (int j = rindex; j < len; j++) res[j] = pop(&s);
-	printf("%s", res);
-	free(res);
+	while (!is_empty(&s)) { // 스택에 남아있는 연산자를 출력
+		printf("%c", pop(&s));
+	}
 }
 
 int main(void) {
